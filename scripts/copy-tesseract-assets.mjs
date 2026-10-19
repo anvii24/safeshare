@@ -1,4 +1,4 @@
-// Copies the Tesseract OCR engine and English language data from node_modules
+// Copies the Tesseract OCR engine and English + Hindi language data from node_modules
 // into public/tesseract/, so the app serves them itself and never fetches
 // anything from a CDN. Runs automatically after `npm install`, and before
 // `npm run dev` / `npm run build`.
@@ -18,8 +18,9 @@ const files = [
   ['tesseract.js-core/tesseract-core-lstm.wasm.js', 'tesseract-core-lstm.wasm.js'],
   ['tesseract.js-core/tesseract-core-simd-lstm.wasm.js', 'tesseract-core-simd-lstm.wasm.js'],
   ['tesseract.js-core/tesseract-core-relaxedsimd-lstm.wasm.js', 'tesseract-core-relaxedsimd-lstm.wasm.js'],
-  // English language model for the LSTM engine.
+  // English and Hindi language models for the LSTM engine.
   ['@tesseract.js-data/eng/4.0.0_best_int/eng.traineddata.gz', 'lang/eng.traineddata.gz'],
+  ['@tesseract.js-data/hin/4.0.0_best_int/hin.traineddata.gz', 'lang/hin.traineddata.gz'],
 ]
 
 mkdirSync(join(outDir, 'lang'), { recursive: true })

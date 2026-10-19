@@ -7,6 +7,9 @@
 const MAX_SIDE = 2000
 
 export interface LoadedImage {
+  /** The original file, kept so the export can be made at full resolution. */
+  file: File
+  /** Working copy, at most MAX_SIDE on its long side. OCR and boxes use its pixel space. */
   canvas: HTMLCanvasElement
   width: number
   height: number
@@ -14,13 +17,36 @@ export interface LoadedImage {
   url: string
 }
 
+/** A problem with the chosen file, with a message written for the user. */
+export class ImageError extends Error {
+  readonly title: string
+  constructor(title: string, message: string) {
+    super(message)
+    this.title = title
+  }
+}
+
 export async function loadImage(file: File): Promise<LoadedImage> {
+  if (file.type === 'application/pdf' || /\.pdf$/i.test(file.name)) {
+    throw new ImageError(
+      'PDFs aren’t supported yet',
+      'Please take a screenshot of the page and choose that instead.',
+    )
+  }
   if (!file.type.startsWith('image/')) {
-    throw new Error('Please choose an image file (JPG, PNG or WebP).')
+    throw new ImageError('This file isn’t a photo', 'Please choose a photo or screenshot (JPG, PNG or WebP).')
   }
 
   // `from-image` applies the EXIF rotation, so sideways phone photos come out upright.
-  const bitmap = await createImageBitmap(file, { imageOrientation: 'from-image' })
+  let bitmap: ImageBitmap
+  try {
+    bitmap = await createImageBitmap(file, { imageOrientation: 'from-image' })
+  } catch {
+    throw new ImageError(
+      'We couldn’t open this photo',
+      'It may be damaged, or in a format this browser can’t read (like HEIC). Try a JPG or PNG, or a screenshot of it.',
+    )
+  }
 
   const scale = Math.min(1, MAX_SIDE / Math.max(bitmap.width, bitmap.height))
   const width = Math.round(bitmap.width * scale)
@@ -39,5 +65,5 @@ export async function loadImage(file: File): Promise<LoadedImage> {
   )
   if (!blob) throw new Error('Could not prepare the image.')
 
-  return { canvas, width, height, url: URL.createObjectURL(blob) }
+  return { file, canvas, width, height, url: URL.createObjectURL(blob) }
 }

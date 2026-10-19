@@ -1,10 +1,10 @@
-// Runs Tesseract OCR (English) in a web worker and returns every word it
-// finds, with its bounding box and line number.
+// Runs Tesseract OCR (English + Hindi) in a web worker and returns every word
+// it finds, with its bounding box and line number.
 //
 // All engine files are loaded from /tesseract/ on this site (see
 // scripts/copy-tesseract-assets.mjs). Nothing is fetched from a CDN and the
 // image never leaves the browser.
-import { createWorker, OEM } from 'tesseract.js'
+import { createWorker, OEM, type Worker } from 'tesseract.js'
 
 export interface BBox {
   x0: number
@@ -28,26 +28,63 @@ export interface OcrProgress {
   progress: number
 }
 
+// English and Hindi together: Indian documents mix both, and the detectors
+// look for Hindi labels like "खाता" and "जन्म तिथि".
+const LANGUAGES = ['eng', 'hin']
+
 // The worker runs from a different context, so it needs absolute URLs.
 const assetUrl = (path: string) => new URL(`tesseract/${path}`, document.baseURI).href
 
-export async function runOcr(
-  image: HTMLCanvasElement,
-  onProgress?: (p: OcrProgress) => void,
-): Promise<OcrWord[]> {
-  const worker = await createWorker('eng', OEM.LSTM_ONLY, {
+// A fresh worker per document, terminated when it's done: an English + Hindi
+// worker holds a lot of memory, and phones need that back for the full-size
+// export. Starting one from the self-hosted files is quick, and preloadOcr
+// starts the next one in the background while the user is choosing a photo.
+let preloaded: Promise<Worker> | null = null
+let preloadedReady = false
+// Progress goes to whichever document is being read right now.
+let progressListener: ((p: OcrProgress) => void) | null = null
+
+function startWorker(): Promise<Worker> {
+  return createWorker(LANGUAGES, OEM.LSTM_ONLY, {
     workerPath: assetUrl('worker.min.js'),
     corePath: assetUrl(''),
     langPath: assetUrl('lang'),
     workerBlobURL: false,
     logger: (m) => {
-      if (!onProgress) return
       const stage = m.status === 'recognizing text' ? 'reading' : 'loading'
-      onProgress({ stage, progress: m.progress })
+      progressListener?.({ stage, progress: m.progress })
     },
   })
+}
 
+/** Starts loading an OCR worker in the background, so it's ready when a photo is chosen. */
+export function preloadOcr(): void {
+  if (preloaded) return
+  const p = startWorker()
+  preloaded = p
+  p.then(
+    () => {
+      if (preloaded === p) preloadedReady = true
+    },
+    () => {
+      if (preloaded === p) preloaded = null // runOcr will start a new one and report any error
+    },
+  )
+}
+
+/** True when a preloaded worker is ready (so the "loading" step can be skipped). */
+export const isOcrReady = () => preloadedReady
+
+export async function runOcr(image: HTMLCanvasElement, onProgress?: (p: OcrProgress) => void): Promise<OcrWord[]> {
+  // Take the preloaded worker if there is one; it's ours alone from here.
+  const pending = preloaded ?? startWorker()
+  preloaded = null
+  preloadedReady = false
+  progressListener = onProgress ?? null
+  let worker: Worker | undefined
   try {
+    worker = await pending
+    onProgress?.({ stage: 'reading', progress: 0 })
     const { data } = await worker.recognize(image, {}, { blocks: true })
 
     const words: OcrWord[] = []
@@ -66,6 +103,7 @@ export async function runOcr(
     }
     return words
   } finally {
-    await worker.terminate()
+    if (progressListener === onProgress) progressListener = null
+    worker?.terminate().catch(() => {})
   }
 }
