@@ -343,10 +343,17 @@ function fixByPattern(s: string, pattern: string): string {
 
 const countLetters = (s: string) => s.replace(/[^A-Za-z]/g, '').length
 
+/**
+ * PAN and IFSC codes are printed in capitals. Requiring that (allowing one
+ * lowercase OCR slip) stops ordinary words from matching, e.g. "Laptop stand"
+ * joined and "fixed" into the IFSC-shaped "LAPT0PSTAND".
+ */
+const mostlyCapitals = (s: string) => s.replace(/[^a-z]/g, '').length <= 1
+
 const PAN_RE = /^[A-Z]{3}[ABCFGHJLPT][A-Z]\d{4}[A-Z]$/
 
 function readPan(value: string): string | null {
-  if (value.length !== 10) return null
+  if (value.length !== 10 || !mostlyCapitals(value)) return null
   const upper = value.toUpperCase()
   // Need mostly real letters, so a plain number can't be "fixed" into a PAN.
   if (countLetters(upper.slice(0, 5)) < 3) return null
@@ -357,7 +364,7 @@ function readPan(value: string): string | null {
 const IFSC_RE = /^[A-Z]{4}0[A-Z0-9]{6}$/
 
 function readIfsc(value: string): string | null {
-  if (value.length !== 11) return null
+  if (value.length !== 11 || !mostlyCapitals(value)) return null
   const upper = value.toUpperCase()
   if (countLetters(upper.slice(0, 4)) < 3) return null
   const fixed = fixByPattern(upper, 'LLLLD')

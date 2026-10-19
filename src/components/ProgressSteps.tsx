@@ -1,4 +1,4 @@
-export type WorkStep = 'prepare' | 'engine' | 'read' | 'scan'
+import type { WorkStep } from '../lib/pipeline'
 
 const STEPS: { id: WorkStep; label: string; hint?: string }[] = [
   { id: 'prepare', label: 'Preparing the photo' },

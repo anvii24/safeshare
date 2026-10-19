@@ -3,15 +3,14 @@ import { AboutPage } from './components/AboutPage'
 import { DocumentPicker } from './components/DocumentPicker'
 import { HomeInfo } from './components/HomeInfo'
 import { Notice } from './components/Notice'
-import { ProgressSteps, type WorkStep } from './components/ProgressSteps'
+import { ProgressSteps } from './components/ProgressSteps'
 import { ReviewScreen } from './components/ReviewScreen'
 import { ShareScreen } from './components/ShareScreen'
-import { detectAll, type Detection } from './lib/detectors'
-import { ImageError, loadImage, type LoadedImage } from './lib/image'
-import { isOcrReady, preloadOcr, runOcr } from './lib/ocr'
+import { ImageError, type LoadedImage } from './lib/image'
+import { preloadOcr } from './lib/ocr'
 import { whenServiceWorkerControls } from './lib/offline'
-import { findQrCodesOnCanvas } from './lib/qr'
-import { assessQuality, type ImageQuality } from './lib/quality'
+import { processDocument, type WorkStep } from './lib/pipeline'
+import type { ImageQuality } from './lib/quality'
 import { initReview, maskPlan, reviewReducer } from './lib/review'
 import { takeSharedFile } from './lib/sharedFile'
 
@@ -27,8 +26,6 @@ interface Failure {
   message: string
 }
 
-/** Lets the browser paint (e.g. a progress update) before a long task blocks the main thread. */
-const nextFrame = () => new Promise<void>((resolve) => requestAnimationFrame(() => setTimeout(resolve, 0)))
 
 export default function App() {
   const [step, setStep] = useState<Step>('pick')
@@ -86,27 +83,14 @@ export default function App() {
     setWork({ step: 'prepare' })
 
     try {
-      const loaded = await loadImage(file)
-      if (!current()) return URL.revokeObjectURL(loaded.url)
-      setImage(loaded)
-      setWork({ step: isOcrReady() ? 'read' : 'engine' })
-
-      const reading = runOcr(loaded.canvas, (p) => {
-        if (current()) setWork(p.stage === 'reading' ? { step: 'read', progress: p.progress } : { step: 'engine' })
+      const result = await processDocument(file, {
+        isCurrent: current,
+        onImage: setImage,
+        onStep: (step, progress) => setWork({ step, progress }),
       })
-      // Both run in their own worker threads, at the same time.
-      const scanning = findQrCodesOnCanvas(loaded.canvas)
-      const words = await reading
-      const qrBoxes = await scanning
-      if (!current()) return
-
-      setWork({ step: 'scan' })
-      await nextFrame()
-      const qrItems: Detection[] = qrBoxes.map((box) => ({ type: 'qr_code', text: '', boxes: [box], words: [] }))
-
-      dispatch({ kind: 'init', detections: [...detectAll(words), ...qrItems] })
-      // A document that's only a QR code is fine; otherwise judge the text.
-      setQuality(qrBoxes.length > 0 && words.length < 3 ? 'ok' : assessQuality(words, qrBoxes))
+      if (!result) return
+      dispatch({ kind: 'init', detections: result.detections })
+      setQuality(result.quality)
       setWork(null)
       setStep('review')
     } catch (err) {

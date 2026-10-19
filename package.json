@@ -12,7 +12,10 @@
     "predev": "node scripts/copy-tesseract-assets.mjs",
     "prebuild": "node scripts/copy-tesseract-assets.mjs",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "make-test-images": "node scripts/make-test-images.mjs",
+    "eval": "node scripts/eval.mjs",
+    "preeval": "node scripts/copy-tesseract-assets.mjs"
   },
   "dependencies": {
     "jsqr": "^1.4.0",
@@ -30,6 +33,7 @@
     "@types/react-dom": "^19.2.7",
     "@vitejs/plugin-react": "^6.1.1",
     "oxlint": "^1.81.0",
+    "puppeteer-core": "^25.14.0",
     "qrcode": "^1.5.4",
     "tailwindcss": "^4.3.3",
     "typescript": "~6.0.2",
@@ -42,5 +46,8 @@
     "workbox-routing": "^7.4.1",
     "workbox-strategies": "^7.4.1",
     "workbox-window": "^7.4.1"
+  },
+  "engines": {
+    "node": ">=22.12"
   }
 }

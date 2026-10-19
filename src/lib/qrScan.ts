@@ -11,6 +11,8 @@ import type { BBox } from './ocr'
 
 /** Most QR codes we look for on one image. */
 const MAX_CODES = 4
+/** Widest width:height (or height:width) ratio accepted as a QR code. */
+const MAX_ASPECT = 1.5
 /** Extra cover around the code, as a share of its size, so the edge modules are hidden too. */
 const PAD_RATIO = 0.06
 
@@ -118,7 +120,12 @@ function findOne(pixels: Uint8ClampedArray, width: number, height: number, regio
   const corners = [topLeftCorner, topRightCorner, bottomLeftCorner, bottomRightCorner]
   const xs = corners.map((p) => p.x + region.x0)
   const ys = corners.map((p) => p.y + region.y0)
-  const pad = Math.ceil(Math.max(Math.max(...xs) - Math.min(...xs), Math.max(...ys) - Math.min(...ys)) * PAD_RATIO)
+  const w = Math.max(...xs) - Math.min(...xs)
+  const h = Math.max(...ys) - Math.min(...ys)
+  // QR codes are square, and stay roughly square in a photo taken at an angle.
+  // jsQR occasionally "finds" one in a long strip of text or texture; ignore those.
+  if (Math.max(w, h) > MAX_ASPECT * Math.min(w, h)) return null
+  const pad = Math.ceil(Math.max(w, h) * PAD_RATIO)
   return {
     x0: Math.max(0, Math.floor(Math.min(...xs) - pad)),
     y0: Math.max(0, Math.floor(Math.min(...ys) - pad)),

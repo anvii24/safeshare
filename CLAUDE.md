@@ -11,6 +11,8 @@ sensitive parts and covers them, and the user shares the cleaned image.
 
 - No backend, no API calls, no uploads. All processing happens in the browser.
 - No analytics, telemetry or error reporting that could carry document content.
+- Enforced by a Content-Security-Policy (`vercel.json`): `connect-src 'self'`, no inline scripts.
+  Adding anything that needs another origin means changing the CSP: treat that as a privacy decision.
 - No third-party network requests at runtime: no CDNs, web fonts or remote
   scripts. OCR engine files and language data (English + Hindi) are self-hosted from
   `public/tesseract/` (copied from `node_modules` by
@@ -57,6 +59,9 @@ sensitive parts and covers them, and the user shares the cleaned image.
 - `src/lib/detectors.ts`: sensitive-data detectors. Each takes OCR words and
   returns `{ type, text, boxes }`; `detectAll` runs them all and removes overlaps
 - `src/lib/detectors.test.ts`: tests for every detector
+- `src/lib/pipeline.ts`: `processDocument(file)`: load → OCR + QR scan in parallel → detections + quality.
+  Used by App.tsx AND by the evaluation, so the evaluation measures exactly what users get
+- `src/lib/evaluate.ts`: scoring for the evaluation (catch rate, false alarms, mislabels, masking)
 - `src/lib/review.ts`: review state (reducer with undo), item labels, and `maskRects` /
   `maskPlan`: the exact rectangles to paint over, including "keep last 4 digits"
 - `src/lib/review.test.ts`, `qrScan.test.ts`, `quality.test.ts`: tests for those modules
@@ -65,6 +70,12 @@ sensitive parts and covers them, and the user shares the cleaned image.
 - `src/lib/export.test.ts`: tests for sizing, rect scaling, watermark text, file name
 - `src/test/fakes.ts`: test helpers: `fakeAadhaar` (Verhoeff-valid), `ocrWords` (fake OCR layout)
 - `scripts/copy-tesseract-assets.mjs`: copies OCR files into `public/tesseract/`
+- `scripts/eval.mjs`: detection quality report (headless Chrome + Vite dev server) → `tests/results.md`
+- `scripts/make-test-images.mjs`: renders the synthetic test documents + their `tests/expected.json` entries
+- `scripts/lib/chrome.mjs`: finds Chrome/Edge for the scripts (or `CHROME_PATH`)
+- `tests/`: `images/`, `expected.json` (answers), `results.md` (dated history), `README.md` (how to add images)
+- `vercel.json`: Vercel build settings + security headers (CSP etc.); `npm run preview` sends the same headers
+- `docs/screenshots/`: README screenshots
 - `src/sw.ts`: service worker. Precaches the app shell, OCR worker script and eng + hin
   language data; caches the one OCR engine build the device uses on first use (CacheFirst);
   serves the app for every navigation; handles the share-target POST
@@ -101,6 +112,11 @@ sensitive parts and covers them, and the user shares the cleaned image.
   preview draws it, and `renderFinalImage` paints exactly those rectangles (scaled
   from working-copy pixels to full resolution, rounded outwards).
 - Undo covers item changes and the masking style, not selection.
+- OCR runs with Tesseract page segmentation mode 3 (automatic layout), set explicitly in `ocr.ts`.
+  Tesseract.js otherwise uses mode 6 (single block), which skipped an Aadhaar number next to a QR code.
+- PAN and IFSC must be printed in capitals (≤ 1 lowercase OCR slip). QR boxes must be roughly square.
+- Measure before and after any detection or OCR change: `npm run eval -- --label "what changed"`.
+  Test images must be fake. Don't tune only to the synthetic set; it's easier than real photos.
 - OCR coordinates are in the processed canvas's pixel space. Overlays use an SVG
   with `viewBox` set to the image size, so they scale with the image.
 
@@ -112,6 +128,8 @@ sensitive parts and covers them, and the user shares the cleaned image.
 - `npm run preview`: serve the build; use this (not `dev`) to test offline, install and share target
 - `npm run lint`: oxlint
 - `npm test`: run the Vitest tests once (`npm run test:watch` to keep watching)
+- `npm run eval`: detection quality on `tests/images/` → `tests/results.md` (needs Chrome or Edge)
+- `npm run make-test-images`: regenerate the synthetic test documents
 
 ## Progress
 
@@ -166,10 +184,21 @@ sensitive parts and covers them, and the user shares the cleaned image.
       `/share-target` while offline: the app opens on the photo; the temporary cache is deleted
 - [x] Landing section on the home screen; About & privacy page (`#about`)
 
+### Day 7 (2026-10-19)
+- [x] Evaluation: `tests/images`, `tests/expected.json`, `npm run eval` → `tests/results.md`
+- [x] 10 synthetic test documents (made-up data, incl. a rotated/soft photo, a dim photo, Hindi-only
+      labels, and a harmless invoice for false alarms) + generator script
+- [x] Baseline 97.1% caught (33/34), 3 false alarms → after fixes 100% (34/34), 1 false alarm
+      (public helpline email, kept on purpose). Fixes: page segmentation mode 3; capitals for
+      PAN/IFSC; square QR boxes. Synthetic set only, so real-world numbers will be lower
+- [x] Content-Security-Policy + security headers (`vercel.json`); full app tested under the CSP
+      with zero violations (offline, export, share target)
+- [x] README with privacy design, detection, results, screenshots, local setup
+
 ### Deployment notes
 - HTTPS is required (service worker, install, Web Share). `localhost` is exempt.
-- Serve `public/tesseract/lang/*.gz` as plain files, **without** `Content-Encoding: gzip`:
-  Tesseract unzips them itself. Not yet checked against a real host.
+- `.gz` language files: fine whether or not the host adds `Content-Encoding: gzip`; Tesseract
+  checks the gzip magic bytes before unzipping (tesseract.js worker-script/index.js).
 - Don't let the host cache `sw.js` long-term, or updates will be slow to arrive.
 - Updates wait until every SafeShare tab/app window is closed (no reload mid-document).
 
@@ -177,4 +206,4 @@ sensitive parts and covers them, and the user shares the cleaned image.
 - [ ] Deploy to an HTTPS host and try on real phones: install, offline, Share → SafeShare from the
       Android gallery, Share → WhatsApp, iPhone "Add to Home Screen" and Safari
 - [ ] Dates with month names ("14 Aug 1992")
-- [ ] Content-Security-Policy that blocks all external network requests
+- [ ] Add photos of printed fake documents to `tests/images` for real-world numbers

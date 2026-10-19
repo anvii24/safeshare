@@ -1,0 +1,184 @@
+{
+  "synthetic-aadhaar-back.jpg": {
+    "description": "Aadhaar-style card back: address with PIN code, number, VID, large QR; decoys 1947 and a help email. Synthetic: made-up data.",
+    "items": [
+      {
+        "type": "aadhaar",
+        "value": "273481590627"
+      },
+      {
+        "type": "aadhaar_vid",
+        "value": "9123456789012345"
+      },
+      {
+        "type": "qr_code"
+      }
+    ]
+  },
+  "synthetic-aadhaar-front-photo.jpg": {
+    "description": "Same card as a phone photo: rotated 3°, slightly soft, on a table. Synthetic: made-up data.",
+    "items": [
+      {
+        "type": "dob",
+        "value": "14/08/1992"
+      },
+      {
+        "type": "aadhaar",
+        "value": "273481590627"
+      },
+      {
+        "type": "aadhaar_vid",
+        "value": "9123456789012345"
+      },
+      {
+        "type": "qr_code"
+      }
+    ]
+  },
+  "synthetic-aadhaar-front.jpg": {
+    "description": "Aadhaar-style card front (clean scan): Hindi + English, QR code, VID. Synthetic: made-up data.",
+    "items": [
+      {
+        "type": "dob",
+        "value": "14/08/1992"
+      },
+      {
+        "type": "aadhaar",
+        "value": "273481590627"
+      },
+      {
+        "type": "aadhaar_vid",
+        "value": "9123456789012345"
+      },
+      {
+        "type": "qr_code"
+      }
+    ]
+  },
+  "synthetic-bank-statement.jpg": {
+    "description": "Statement with a transaction table; decoys: 12-digit UPI/ATM refs, cheque no., amounts, dates. Synthetic: made-up data.",
+    "items": [
+      {
+        "type": "bank_account",
+        "value": "012345678901"
+      },
+      {
+        "type": "ifsc",
+        "value": "SMPL0004567"
+      },
+      {
+        "type": "phone",
+        "value": "070221 98765"
+      }
+    ]
+  },
+  "synthetic-hindi-form.jpg": {
+    "description": "Form with Hindi labels only (जन्म तिथि, मोबाइल नंबर, आधार संख्या, खाता संख्या). Synthetic: made-up data.",
+    "items": [
+      {
+        "type": "dob",
+        "value": "14/08/1992"
+      },
+      {
+        "type": "phone",
+        "value": "98765 43210"
+      },
+      {
+        "type": "aadhaar",
+        "value": "273481590627"
+      },
+      {
+        "type": "bank_account",
+        "value": "50100987654321"
+      }
+    ]
+  },
+  "synthetic-invoice-harmless.jpg": {
+    "description": "Harmless invoice: GSTIN, order/PO numbers, HSN codes, amounts, dates; nothing sensitive. Synthetic: made-up data.",
+    "items": []
+  },
+  "synthetic-pan-card.jpg": {
+    "description": "PAN-style card: \"Permanent Account Number\" label (bank-keyword decoy), date of birth. Synthetic: made-up data.",
+    "items": [
+      {
+        "type": "dob",
+        "value": "03/11/1985"
+      },
+      {
+        "type": "pan",
+        "value": "ABCPK1234F"
+      }
+    ]
+  },
+  "synthetic-passbook-dim.jpg": {
+    "description": "Same passbook as a dim, low-contrast phone photo, rotated -2°. Synthetic: made-up data.",
+    "items": [
+      {
+        "type": "bank_account",
+        "value": "50100234567891"
+      },
+      {
+        "type": "ifsc",
+        "value": "EXMP0001234"
+      },
+      {
+        "type": "phone",
+        "value": "+91 98450 12345"
+      },
+      {
+        "type": "email",
+        "value": "ravi.kumar@example.com"
+      }
+    ]
+  },
+  "synthetic-passbook.jpg": {
+    "description": "Passbook front page; decoys: customer ID, MICR code, PIN code, account-opening date. Synthetic: made-up data.",
+    "items": [
+      {
+        "type": "bank_account",
+        "value": "50100234567891"
+      },
+      {
+        "type": "ifsc",
+        "value": "EXMP0001234"
+      },
+      {
+        "type": "phone",
+        "value": "+91 98450 12345"
+      },
+      {
+        "type": "email",
+        "value": "ravi.kumar@example.com"
+      }
+    ]
+  },
+  "synthetic-rental-letter.jpg": {
+    "description": "Letter with sensitive details inside sentences. Synthetic: made-up data.",
+    "items": [
+      {
+        "type": "aadhaar",
+        "value": "456789123451"
+      },
+      {
+        "type": "pan",
+        "value": "ABCPK1234F"
+      },
+      {
+        "type": "phone",
+        "value": "+91 98450 12345"
+      },
+      {
+        "type": "email",
+        "value": "ravi.kumar@example.com"
+      },
+      {
+        "type": "bank_account",
+        "value": "012345678901"
+      },
+      {
+        "type": "ifsc",
+        "value": "SMPL0004567"
+      }
+    ]
+  }
+}

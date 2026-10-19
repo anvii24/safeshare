@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs'
 import tailwindcss from '@tailwindcss/vite'
 import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
@@ -7,8 +8,18 @@ import { SHARE_FIELD, SHARE_TARGET_PATH } from './src/shareTarget.ts'
 const THEME = '#0f766e' // teal-700
 const BACKGROUND = '#fafaf9' // stone-50
 
+// `npm run preview` sends the same security headers as production (vercel.json),
+// including the Content-Security-Policy, so they can be tested locally.
+const vercel = JSON.parse(readFileSync(new URL('./vercel.json', import.meta.url), 'utf8')) as {
+  headers: { source: string; headers: { key: string; value: string }[] }[]
+}
+const productionHeaders = Object.fromEntries(
+  vercel.headers.find((h) => h.source === '/(.*)')!.headers.map((h) => [h.key, h.value]),
+)
+
 // https://vite.dev/config/
 export default defineConfig({
+  preview: { headers: productionHeaders },
   plugins: [
     react(),
     tailwindcss(),

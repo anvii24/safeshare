@@ -4,7 +4,7 @@
 // All engine files are loaded from /tesseract/ on this site (see
 // scripts/copy-tesseract-assets.mjs). Nothing is fetched from a CDN and the
 // image never leaves the browser.
-import { createWorker, OEM, type Worker } from 'tesseract.js'
+import { createWorker, OEM, type PSM, type Worker } from 'tesseract.js'
 
 export interface BBox {
   x0: number
@@ -75,6 +75,15 @@ export function preloadOcr(): void {
 /** True when a preloaded worker is ready (so the "loading" step can be skipped). */
 export const isOcrReady = () => preloadedReady
 
+/**
+ * Tesseract's page segmentation mode. Tesseract.js leaves the library default,
+ * '6' (one uniform block of text), which suits a paragraph but not an ID card
+ * or form: on a card back with a large QR code it skipped the Aadhaar number
+ * entirely. '3' (automatic page layout) caught it, and every other item in
+ * the test set (see tests/results.md).
+ */
+const PAGE_SEG_MODE_AUTO = '3'
+
 export async function runOcr(image: HTMLCanvasElement, onProgress?: (p: OcrProgress) => void): Promise<OcrWord[]> {
   // Take the preloaded worker if there is one; it's ours alone from here.
   const pending = preloaded ?? startWorker()
@@ -84,6 +93,7 @@ export async function runOcr(image: HTMLCanvasElement, onProgress?: (p: OcrProgr
   let worker: Worker | undefined
   try {
     worker = await pending
+    await worker.setParameters({ tessedit_pageseg_mode: PAGE_SEG_MODE_AUTO as PSM })
     onProgress?.({ stage: 'reading', progress: 0 })
     const { data } = await worker.recognize(image, {}, { blocks: true })
 

@@ -59,3 +59,18 @@ describe('findQrCodes', () => {
     expect(findQrCodes(new Uint8ClampedArray(400 * 300 * 4).fill(255), 400, 300)).toEqual([])
   })
 })
+
+describe('findQrCodes: shape check', () => {
+  it('still finds a code photographed slightly squashed (up to 1.5:1)', () => {
+    // Stretch a code horizontally by 1.3× to mimic a photo taken at an angle.
+    const text = 'made-up squashed code'
+    const src = imageWithQrCodes(400, 400, [{ text, x: 60, y: 60, module: 8 }])
+    const w = 520
+    const out = new Uint8ClampedArray(w * 400 * 4)
+    for (let y = 0; y < 400; y++) for (let x = 0; x < w; x++) {
+      const sx = Math.floor(x / 1.3)
+      out.set(src.subarray((y * 400 + sx) * 4, (y * 400 + sx) * 4 + 4), (y * w + x) * 4)
+    }
+    expect(findQrCodes(out, w, 400)).toHaveLength(1)
+  })
+})

@@ -381,3 +381,16 @@ describe('OCR misreads in labels', () => {
     expect(texts(detectBankAccount(ocrWords('A/c No: 123456789012345 Ref 987654321098')))).toEqual(['123456789012345'])
   })
 })
+
+describe('ordinary words that look like codes', () => {
+  it('does not read "Laptop stand" as an IFSC code', () => {
+    expect(detectIfsc(ocrWords('Laptop stand'))).toEqual([])
+    expect(detectAll(ocrWords('Laptop stand', 'Bookshelf 2'))).toEqual([])
+  })
+
+  it('requires PAN and IFSC in capitals, allowing one lowercase OCR slip', () => {
+    expect(detectPan(ocrWords('abcpe1234f'))).toEqual([])
+    expect(texts(detectPan(ocrWords('ABCPEl234F')))).toEqual(['ABCPE1234F'])
+    expect(detectIfsc(ocrWords('abcd0123456'))).toEqual([])
+  })
+})
