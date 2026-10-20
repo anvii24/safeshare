@@ -200,6 +200,8 @@ sensitive parts and covers them, and the user shares the cleaned image.
 - `.gz` language files: fine whether or not the host adds `Content-Encoding: gzip`; Tesseract
   checks the gzip magic bytes before unzipping (tesseract.js worker-script/index.js).
 - Don't let the host cache `sw.js` long-term, or updates will be slow to arrive.
+- `vercel.json` rewrites unknown paths to `/index.html` (SPA fallback before the service worker
+  is installed), except `assets/`, `tesseract/` and `icons/`, so a missing file is a real 404.
 - Updates wait until every SafeShare tab/app window is closed (no reload mid-document).
 
 ### Next
