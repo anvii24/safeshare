@@ -2,9 +2,16 @@
 
 **Hide Aadhaar, PAN, bank account and phone numbers on a photo of a document before you share it, without the photo ever leaving your phone.**
 
-People in India send photos of their Aadhaar card, PAN card or passbook over WhatsApp all the time: to landlords, employers, banks, delivery agents. Those photos carry far more than the person needs, and they get forwarded and stored indefinitely. SafeShare reads the photo on your device, finds the sensitive details, covers them with solid black boxes, and gives you a clean copy to share.
+People in India send photos of their Aadhaar card, PAN card or passbook over WhatsApp all the time: to landlords, employers, banks, delivery agents. Those photos carry far more than the person needs, and they get forwarded and stored indefinitely. SafeShare reads the photo on your device, finds the sensitive details, covers them with solid black bars, and gives you a clean copy to share.
 
-Live app: **https://safeshare-nine.vercel.app**
+**Try it: [safeshare-nine.vercel.app](https://safeshare-nine.vercel.app/)** · works offline · nothing is uploaded · MIT licensed
+
+<!--
+  Demo GIF placeholder. Record a ~10 s screen capture on a phone (choose a photo → bars slide in →
+  before/after slider → Share), save it as docs/demo.gif (keep it under ~5 MB), then uncomment:
+
+<p align="center"><img src="docs/demo.gif" alt="SafeShare demo: a document photo is scanned, its numbers are covered with black bars, and the clean copy is shared" width="320"></p>
+-->
 
 <!-- Captured from the production build at 390px with a synthetic test card. Swap in real phone screenshots when you have them. -->
 | Choose a photo | Review what's hidden | Share the clean copy |
@@ -26,7 +33,7 @@ The rule is simple: **no server, nothing leaves the device.**
 
 - **Everything runs in the browser.** Text recognition (Tesseract.js, WebAssembly), QR finding (jsQR) and detection all run on the phone, in web workers. There is no backend and no API.
 - **Enforced by the browser, not just by promise.** A strict Content-Security-Policy (`connect-src 'self'`, see `vercel.json`) means the page *cannot* send requests to any other server, even by mistake.
-- **No third-party requests at all.** The OCR engine and the English + Hindi language files are served from the app itself (`public/tesseract/`), not a CDN. No web fonts, no analytics, no error reporting, no cookies, no accounts.
+- **No third-party requests at all.** The OCR engine, the English + Hindi language files and the font are served from the app itself (`public/tesseract/`, bundled assets), not a CDN. No analytics, no error reporting, no cookies, no accounts.
 - **Nothing is saved.** Documents live only in memory. The only things stored on the device are the app's own files (for offline use) and, briefly, an image shared from the Android gallery, which is deleted as soon as the app opens it.
 - **Solid masks, never blur.** Blur and pixelation can sometimes be reversed; black boxes can't.
 - **Clean output file.** The shared image is a brand-new JPEG drawn from a canvas, so the original's EXIF metadata (GPS location, camera, time) is not carried over. Verified in a browser test with a planted EXIF block.
@@ -68,9 +75,23 @@ Details that make it work on real documents:
 
 The rules and their tests are in [`src/lib/detectors.ts`](src/lib/detectors.ts) and [`detectors.test.ts`](src/lib/detectors.test.ts).
 
+## Tech stack
+
+| | |
+| --- | --- |
+| **App** | React 19, TypeScript, Vite |
+| **Styling** | Tailwind CSS v4; Archivo variable font (bundled); animations in plain CSS with reduced-motion fallbacks |
+| **OCR** | [Tesseract.js](https://github.com/naptha/tesseract.js) v7 (WebAssembly, LSTM engine), English + Hindi, in a web worker |
+| **QR codes** | [jsQR](https://github.com/cozmo/jsQR), in its own web worker |
+| **Offline + install** | vite-plugin-pwa + Workbox (custom service worker for the Android share target) |
+| **Tests** | Vitest (94 unit tests); headless-Chrome evaluation with Puppeteer |
+| **Hosting** | Vercel, static files only, strict Content-Security-Policy |
+
 ## Test results
 
-`npm run eval` runs every image in `tests/images/` through the real pipeline in headless Chrome and scores it against `tests/expected.json`. Full history in [`tests/results.md`](tests/results.md).
+**Unit tests:** 94 passing (`npm test`), covering every detector, the review logic, mask geometry, export sizing and photo-quality checks. All numbers in tests are made up.
+
+**Detection quality:** `npm run eval` runs every image in `tests/images/` through the real pipeline in headless Chrome and scores it against `tests/expected.json`. Full history in [`tests/results.md`](tests/results.md).
 
 Latest run (19 Oct 2026, 10 synthetic documents):
 
@@ -126,7 +147,8 @@ src/
   lib/review.ts           review state, undo, mask rectangles
   lib/export.ts           full-resolution render, watermark, JPEG export
   components/             UI
-scripts/                  OCR asset copy, eval, test-image generator
+  index.css               design tokens and animations
+scripts/                  OCR asset copy, eval, test-image and icon generators
 tests/                    test images, expected answers, results
 CLAUDE.md                 project rules, conventions and progress log
 ```
@@ -136,3 +158,7 @@ CLAUDE.md                 project rules, conventions and progress log
 - It can miss things: blurry or dark photos, handwriting, unusual layouts. The app says so and asks you to check before sending.
 - Names and addresses aren't detected automatically; use **Draw box**.
 - PDFs aren't supported yet (take a screenshot). iPhones can't share *to* web apps, so Share → SafeShare is Android only.
+
+## License
+
+[MIT](LICENSE) © 2026 Anvi Gupta
