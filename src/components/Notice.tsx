@@ -6,29 +6,41 @@ interface Props {
   children: ReactNode
   /** Optional button, e.g. "Try another photo". */
   action?: { label: string; onClick: () => void }
+  /** On the dark review screen ("secure mode"). */
+  dark?: boolean
 }
 
-const TONES = {
-  error: { box: 'bg-rose-50 ring-rose-200', title: 'text-rose-900', body: 'text-rose-800', button: 'text-rose-900 ring-rose-300' },
-  warning: { box: 'bg-amber-50 ring-amber-200', title: 'text-amber-950', body: 'text-amber-900', button: 'text-amber-950 ring-amber-300' },
-}
-
-// A friendly message card for errors and photo-quality warnings.
-export function Notice({ tone, title, children, action }: Props) {
-  const t = TONES[tone]
+// A friendly message card for errors and photo-quality warnings: a card with a
+// marigold edge (a fill, never marigold text on light backgrounds) and an icon.
+export function Notice({ tone, title, children, action, dark = false }: Props) {
   return (
-    <div role={tone === 'error' ? 'alert' : 'status'} className={`flex flex-col gap-1 rounded-2xl px-4 py-3 ring-1 ${t.box}`}>
-      <p className={`text-[15px] font-semibold ${t.title}`}>{title}</p>
-      <div className={`text-sm ${t.body}`}>{children}</div>
-      {action && (
-        <button
-          type="button"
-          onClick={action.onClick}
-          className={`mt-2 min-h-12 self-start rounded-xl bg-white px-4 text-sm font-semibold ring-1 hover:bg-white/70 ${t.button}`}
-        >
-          {action.label}
-        </button>
-      )}
+    <div
+      role={tone === 'error' ? 'alert' : 'status'}
+      className={`flex gap-3 rounded-2xl border-l-[6px] border-marigold px-4 py-3 ${
+        dark ? 'bg-ink-2 text-paper ring-1 ring-ink-3' : 'bg-card text-ink ring-1 ring-line'
+      }`}
+    >
+      <svg viewBox="0 0 24 24" className="mt-0.5 h-5 w-5 shrink-0" aria-hidden="true">
+        <rect x="2" y="2" width="20" height="20" fill={dark ? '#f5a524' : '#111111'} />
+        <path d={tone === 'error' ? 'M8 8l8 8M16 8l-8 8' : 'M12 6.5v7M12 16.5v1'} stroke={dark ? '#111111' : '#f5a524'} strokeWidth="2.6" />
+      </svg>
+      <div className="flex min-w-0 flex-1 flex-col gap-1">
+        <p className="text-[15px] font-semibold">{title}</p>
+        <div className={`text-sm leading-relaxed ${dark ? 'text-ash' : 'text-muted'}`}>{children}</div>
+        {action && (
+          <button
+            type="button"
+            onClick={action.onClick}
+            className={`mt-2 min-h-12 self-start rounded-xl px-4 text-sm font-semibold ring-2 focus-visible:outline-3 focus-visible:outline-offset-2 ${
+              dark
+                ? 'text-paper ring-paper/70 hover:bg-ink-3 focus-visible:outline-marigold'
+                : 'text-ink ring-ink hover:bg-white focus-visible:outline-ink'
+            }`}
+          >
+            {action.label}
+          </button>
+        )}
+      </div>
     </div>
   )
 }

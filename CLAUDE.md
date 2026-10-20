@@ -44,10 +44,14 @@ sensitive parts and covers them, and the user shares the cleaned image.
 - `src/components/`: UI pieces
   - `DocumentPicker`: choose a file; `ProgressSteps`: 4-step progress checklist
   - `Notice`: friendly error / warning card (bad file, no text, blurry)
-  - `ReviewScreen`: review step layout, masking-style switch, bottom bar (Undo / Draw box / Continue)
-  - `ReviewCanvas`: image + SVG overlay; tap boxes to select, drag to draw (pointer events, touch-safe)
-  - `ItemList`, `ItemControls`: list rows with on/off switch or delete; `itemColors`: colour per type
-  - `ShareScreen`: final preview, purpose watermark field, Download / Share bar, "check before sending" reminder
+  - `ReviewScreen`: review step layout (dark "secure mode"), "N found" badge, masking-style switch,
+    bottom bar (Undo / Draw box / Continue)
+  - `ReviewCanvas`: image + SVG overlay; bars slide in one by one on open; tap boxes to select,
+    drag to draw (pointer events, touch-safe)
+  - `ItemList`, `ItemControls`: list rows with hidden/visible switch or delete
+  - `ShareScreen`: before/after preview, purpose watermark field, Download / Share bar, "check before sending" reminder
+  - `BeforeAfter`: before/after slider (pointer drag with `touch-action: pan-y`, hidden range input for keyboard)
+  - `Logo` (`BarMark` + name), `SampleCard`: home hero, a made-up "Sample" ID that redacts itself on loop
 - `src/lib/image.ts`: file → upright, size-capped working canvas (max 2000px side); keeps the original
   `file` for the full-size export. Throws `ImageError` (title + message for the user) for bad files
 - `src/lib/qr.ts` → `qr.worker.ts` → `qrScan.ts`: QR codes found off the main thread. Only the
@@ -88,14 +92,22 @@ sensitive parts and covers them, and the user shares the cleaned image.
 - `src/components/AboutPage.tsx`: About & privacy page, shown for `#about`
 - `vite.config.ts`: PWA manifest (name, icons, theme `#0f766e`, share_target) and precache list
 - `tsconfig.sw.json`: type-checks `sw.ts` with WebWorker types (excluded from the app config)
-- `public/icons/`: app icons. `icon.svg` / `icon-maskable.svg` are the sources; the PNGs were
-  rendered from them in headless Chrome (192, 512, maskable 512, apple-touch 180)
+- `public/icons/`: app icons. `icon.svg` / `icon-maskable.svg` are the sources; `node scripts/make-icons.mjs`
+  renders the PNGs in headless Chrome (192, 512, maskable 512, apple-touch 180)
+- `src/index.css`: design tokens (colours, fonts) and all animations (CSS only)
 
 ## Conventions
 
 - Mobile-first. Must work at 360px wide: no horizontal scroll, tap targets ≥ 44px (aim for 48),
   no text smaller than 13px. Inputs use 16px text (stops iOS zooming in).
-- Calm, clean design: stone neutrals, a single teal accent, rounded cards.
+- Design, "The Redaction Bar": ink `#111111`, paper `#F4F1EA`, one accent, marigold `#F5A524`
+  (Tailwind tokens `ink`, `paper`, `card`, `line`, `marigold`, `muted`, `ash` in `index.css`).
+  Black redaction bars are the motif (`.redact-word` for a headline word). Review is dark ("secure mode").
+  Headings use Archivo (bundled from `@fontsource-variable/archivo`, Latin only, precached); body text uses system fonts.
+- Contrast: text on marigold is always ink. Marigold is NEVER text on paper/light backgrounds (1.8:1),
+  only on ink (9.3:1) or as a fill. Secondary text: `muted` on paper, `ash` on ink.
+- Motion: CSS transform/opacity only, no animation library. Everything has a `prefers-reduced-motion`
+  end state (static bars, no scan line). The hero pauses when off screen.
 - Tests use made-up numbers only (`fakeAadhaar`, example.com emails). Never real ones.
 - Detection rules: number detectors join neighbouring number-like words on the
   same line (not across columns or lines) and fix OCR look-alikes (O→0, I/l→1,
@@ -194,6 +206,12 @@ sensitive parts and covers them, and the user shares the cleaned image.
 - [x] Content-Security-Policy + security headers (`vercel.json`); full app tested under the CSP
       with zero violations (offline, export, share target)
 - [x] README with privacy design, detection, results, screenshots, local setup
+
+### Redesign (2026-10-20, branch `redesign`)
+- [x] "The Redaction Bar" look on every screen; new logo, app icon, favicon; manifest theme `#111111`
+- [x] Scan line during OCR, bars sliding in on review, before/after slider on share, self-redacting hero card
+- [x] Checked at 360/390px under the CSP: no horizontal scroll, taps ≥ 44px, text ≥ 13px, no marigold
+      text on light backgrounds, no running animations with reduce motion. Eval unchanged (34/34, 1 false alarm)
 
 ### Deployment notes
 - Live on Vercel: https://safeshare-nine.vercel.app (GitHub `anvii24/safeshare`, every push to `main` redeploys)

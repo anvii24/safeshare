@@ -2,9 +2,11 @@ import { useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { AboutPage } from './components/AboutPage'
 import { DocumentPicker } from './components/DocumentPicker'
 import { HomeInfo } from './components/HomeInfo'
+import { Logo } from './components/Logo'
 import { Notice } from './components/Notice'
 import { ProgressSteps } from './components/ProgressSteps'
 import { ReviewScreen } from './components/ReviewScreen'
+import { SampleCard } from './components/SampleCard'
 import { ShareScreen } from './components/ShareScreen'
 import { ImageError, type LoadedImage } from './lib/image'
 import { preloadOcr } from './lib/ocr'
@@ -139,21 +141,25 @@ export default function App() {
   const reviewing = step === 'review' && !showAbout
   const hasBottomBar = (step === 'review' || step === 'share') && !showAbout
 
+  // Review runs in dark "secure mode", edge to edge (see index.css).
+  useEffect(() => {
+    document.documentElement.classList.toggle('secure', reviewing)
+  }, [reviewing])
+
   return (
-    <div className="min-h-dvh bg-stone-50 text-stone-900">
-      <main className={`mx-auto flex max-w-xl flex-col gap-5 px-4 pt-6 ${hasBottomBar ? 'pb-40' : 'pb-12'} ${reviewing ? 'lg:max-w-5xl' : ''}`}>
-        <header className="flex items-center justify-between gap-3">
-          <div className="min-w-0">
-            <h1 className="text-2xl font-semibold tracking-tight">SafeShare</h1>
-            <p className="text-sm text-stone-500">
-              {reviewing ? 'Review what will be hidden.' : step === 'share' ? 'Your cleaned image is ready.' : 'Hide sensitive details before you share.'}
-            </p>
-          </div>
+    <div className={`min-h-dvh ${reviewing ? 'bg-ink text-paper' : 'bg-paper text-ink'}`}>
+      <main className={`mx-auto flex max-w-xl flex-col gap-5 px-4 pt-5 ${hasBottomBar ? 'pb-40' : 'pb-12'} ${reviewing ? 'lg:max-w-5xl' : ''}`}>
+        <header className="flex min-h-12 items-center justify-between gap-3">
+          <Logo dark={reviewing} />
           {step !== 'pick' && !showAbout && (
             <button
               type="button"
               onClick={reset}
-              className="min-h-12 shrink-0 whitespace-nowrap rounded-xl px-3 text-sm font-medium text-teal-800 ring-1 ring-stone-300 hover:bg-white"
+              className={`min-h-12 shrink-0 rounded-xl px-3 text-sm font-semibold whitespace-nowrap ring-1 focus-visible:outline-2 focus-visible:outline-offset-2 ${
+                reviewing
+                  ? 'text-paper ring-ink-3 hover:bg-ink-2 focus-visible:outline-marigold'
+                  : 'text-ink ring-line hover:bg-card focus-visible:outline-ink'
+              }`}
             >
               New document
             </button>
@@ -169,15 +175,27 @@ export default function App() {
         )}
         {!showAbout && step === 'pick' && (
           <>
-            <DocumentPicker onFile={handleFile} />
+            <section className="flex flex-col gap-5 pt-2">
+              <h1 className="font-display text-[40px] leading-[1.04] font-extrabold tracking-tight text-ink sm:text-5xl">
+                Share the doc. Not your <span className="redact-word">numbers</span>.
+              </h1>
+              <p className="text-base leading-relaxed text-muted">
+                SafeShare covers Aadhaar, PAN, bank and phone numbers with solid black bars, right here on your phone.
+                Nothing is uploaded.
+              </p>
+              <SampleCard />
+              <DocumentPicker onFile={handleFile} />
+            </section>
             <HomeInfo />
           </>
         )}
         {!showAbout && work && <ProgressSteps step={work.step} progress={work.progress} />}
 
+        {/* While the text is read, a marigold scan line sweeps down the photo. */}
         {!showAbout && step === 'reading' && image && (
-          <div className="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-stone-200">
-            <img src={image.url} alt="Your chosen document" className="block h-auto w-full" />
+          <div className="relative overflow-hidden rounded-xl bg-card ring-2 ring-ink">
+            <img src={image.url} alt="Your chosen document, being read" className="block h-auto w-full" />
+            <div className="scan-track" aria-hidden="true" />
           </div>
         )}
 
@@ -196,7 +214,7 @@ export default function App() {
 
         {!reviewing && (
           <footer className="flex flex-col items-center gap-1">
-            <p className="flex items-center justify-center gap-2 text-center text-[13px] text-stone-500">
+            <p className="flex items-center justify-center gap-2 text-center text-[13px] text-muted">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4" aria-hidden="true">
                 <rect x="5" y="11" width="14" height="10" rx="2" />
                 <path d="M8 11V7a4 4 0 0 1 8 0v4" />
@@ -204,7 +222,10 @@ export default function App() {
               Your document never leaves this device.
             </p>
             {!showAbout && step !== 'share' && (
-              <a href="#about" className="flex min-h-11 items-center px-3 text-[13px] font-medium text-teal-800 underline underline-offset-4">
+              <a
+                href="#about"
+                className="flex min-h-11 items-center px-3 text-[13px] font-semibold text-ink underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-ink"
+              >
                 About &amp; privacy
               </a>
             )}

@@ -2,9 +2,8 @@ import { useEffect, useState, type Dispatch, type ReactNode } from 'react'
 import type { LoadedImage } from '../lib/image'
 import type { ImageQuality } from '../lib/quality'
 import { itemLabel, itemStatus, type MaskStyle, type ReviewAction, type ReviewState } from '../lib/review'
-import { itemColor } from './itemColors'
 import { DeleteButton, HideSwitch } from './ItemControls'
-import { ItemList } from './ItemList'
+import { ItemBar, ItemList } from './ItemList'
 import { Notice } from './Notice'
 import { ReviewCanvas } from './ReviewCanvas'
 
@@ -20,12 +19,14 @@ interface Props {
 
 const WIDE = '(min-width: 1024px)'
 
-// The review step: the document with coloured boxes, the list of items, the
-// masking style, and a bottom bar (Undo, Draw box, Continue) within thumb reach.
+// The review step, in dark "secure mode": a badge with how many items were
+// found, the document with black bars, the list of items, the masking style,
+// and a bottom bar (Undo, Draw box, Continue) within thumb reach.
 export function ReviewScreen({ image, state, dispatch, quality, onRetake, onContinue }: Props) {
   const [drawing, setDrawing] = useState(false)
   const { items, style, selectedId, selectedFrom } = state
   const selected = items.find((it) => it.id === selectedId) ?? null
+  const found = items.filter((it) => it.type !== null).length
 
   // Bring the matching box or list row into view. On phones the list is below
   // the image, so a tap on the image just highlights (and shows the bar below)
@@ -34,7 +35,8 @@ export function ReviewScreen({ image, state, dispatch, quality, onRetake, onCont
     if (!selectedId || !selectedFrom) return
     if (selectedFrom === 'image' && !window.matchMedia(WIDE).matches) return
     const target = document.getElementById(selectedFrom === 'image' ? `item-${selectedId}` : `box-${selectedId}`)
-    target?.scrollIntoView({ block: selectedFrom === 'list' ? 'center' : 'nearest', behavior: 'smooth' })
+    const smooth = !window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    target?.scrollIntoView({ block: selectedFrom === 'list' ? 'center' : 'nearest', behavior: smooth ? 'smooth' : 'auto' })
   }, [selectedId, selectedFrom])
 
   const toggle = (id: string) => dispatch({ kind: 'toggle', id })
@@ -44,14 +46,26 @@ export function ReviewScreen({ image, state, dispatch, quality, onRetake, onCont
     <>
       <div className="flex flex-col gap-4 lg:grid lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-start lg:gap-6">
         <section className="flex flex-col gap-3">
+          <div className="flex flex-wrap items-center gap-3">
+            <h1 className="font-display text-[28px] leading-none font-extrabold tracking-tight text-paper">Review</h1>
+            <span className="bg-marigold px-2.5 py-1 font-display text-[13px] font-extrabold tracking-[0.1em] text-ink uppercase">
+              {found === 0 ? 'None found' : `${found} found`}
+            </span>
+          </div>
+          <p className="flex items-center gap-2 text-[13px] text-ash">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4 shrink-0" aria-hidden="true">
+              <rect x="5" y="11" width="14" height="10" rx="1" />
+              <path d="M8 11V7a4 4 0 0 1 8 0v4" />
+            </svg>
+            Secure mode · this stays on your device
+          </p>
           <QualityNotice quality={quality} onRetake={onRetake} />
           {drawing ? (
-            <p className="rounded-xl bg-violet-50 px-4 py-3 text-sm text-violet-900 ring-1 ring-violet-200">
-              Drag over the area you want to hide.
-            </p>
+            <p className="rounded-xl bg-marigold px-4 py-3 text-sm font-semibold text-ink">Drag over the area you want to hide.</p>
           ) : (
-            <p className="text-sm text-stone-600">
-              Check the boxes. Tap one to select it, or use <strong>Draw box</strong> for anything we missed.
+            <p className="text-sm leading-relaxed text-ash">
+              Check the bars. Tap one to select it, or use <strong className="text-paper">Draw box</strong> for anything we
+              missed.
             </p>
           )}
           <ReviewCanvas
@@ -71,8 +85,8 @@ export function ReviewScreen({ image, state, dispatch, quality, onRetake, onCont
         <aside className="flex flex-col gap-4 lg:sticky lg:top-4 lg:max-h-[calc(100dvh-8rem)] lg:overflow-y-auto">
           <MaskStyleSwitch style={style} onChange={(s) => dispatch({ kind: 'set_style', style: s })} />
           <div className="flex flex-col gap-2">
-            <h2 className="text-sm font-medium text-stone-500">
-              {items.length === 0 ? 'Areas to hide' : `Areas to hide (${items.filter((i) => i.enabled).length} of ${items.length})`}
+            <h2 className="text-[13px] font-semibold tracking-[0.08em] text-ash uppercase">
+              {items.length === 0 ? 'Areas to hide' : `Areas to hide · ${items.filter((i) => i.enabled).length} of ${items.length}`}
             </h2>
             <ItemList
               items={items}
@@ -87,13 +101,13 @@ export function ReviewScreen({ image, state, dispatch, quality, onRetake, onCont
       </div>
 
       {/* Bottom bar: everything reachable with one thumb. */}
-      <div className="fixed inset-x-0 bottom-0 z-10 border-t border-stone-200 bg-white/95 pb-[env(safe-area-inset-bottom)] backdrop-blur">
+      <div className="fixed inset-x-0 bottom-0 z-10 border-t border-ink-3 bg-ink/95 pb-[env(safe-area-inset-bottom)] backdrop-blur">
         <div className="mx-auto max-w-xl px-4 lg:max-w-5xl">
           {selected && (
-            <div className="flex items-center gap-2 border-b border-stone-100 py-1 lg:hidden">
-              <span className="h-3.5 w-3.5 shrink-0 rounded-full" style={{ backgroundColor: itemColor(selected) }} aria-hidden="true" />
-              <p className="flex-1 text-sm text-stone-800">
-                {itemLabel(selected)} <span className="text-stone-500">– {itemStatus(selected, style)}</span>
+            <div className="flex items-center gap-2 border-b border-ink-3 py-1 lg:hidden">
+              <ItemBar on={selected.enabled} />
+              <p className="flex-1 pl-1 text-sm text-paper">
+                {itemLabel(selected)} <span className="text-ash">– {itemStatus(selected, style)}</span>
               </p>
               {selected.type ? (
                 <HideSwitch on={selected.enabled} label={`Hide ${itemLabel(selected)}`} onChange={() => toggle(selected.id)} />
@@ -113,9 +127,12 @@ export function ReviewScreen({ image, state, dispatch, quality, onRetake, onCont
               type="button"
               onClick={onContinue}
               disabled={drawing}
-              className="min-h-12 flex-1 rounded-xl bg-teal-700 px-4 text-base font-semibold text-white shadow-sm hover:bg-teal-800 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-teal-600 active:scale-[0.98] disabled:opacity-50"
+              className="flex min-h-12 flex-1 items-center justify-center gap-2 rounded-xl bg-marigold px-4 font-display text-base font-bold text-ink hover:bg-[#f7b445] focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-paper active:scale-[0.98] disabled:opacity-40"
             >
               Continue
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" className="h-5 w-5" aria-hidden="true">
+                <path d="M5 12h13M13 6l6 6-6 6" />
+              </svg>
             </button>
           </div>
         </div>
@@ -137,8 +154,8 @@ function BarButton(props: {
       onClick={props.onClick}
       disabled={props.disabled}
       aria-pressed={props.pressed}
-      className={`flex min-h-12 min-w-20 flex-col items-center justify-center gap-0.5 rounded-xl px-3 text-[13px] font-medium ring-1 transition-colors focus-visible:outline-2 focus-visible:outline-teal-600 disabled:opacity-40 ${
-        props.pressed ? 'bg-violet-600 text-white ring-violet-600' : 'bg-white text-stone-700 ring-stone-300 hover:bg-stone-50'
+      className={`flex min-h-12 min-w-20 flex-col items-center justify-center gap-0.5 rounded-xl px-3 text-[13px] font-semibold ring-1 transition-colors focus-visible:outline-2 focus-visible:outline-marigold disabled:opacity-40 ${
+        props.pressed ? 'bg-paper text-ink ring-paper' : 'bg-ink-2 text-paper ring-ink-3 hover:bg-ink-3'
       }`}
     >
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5" aria-hidden="true">
@@ -156,10 +173,10 @@ function MaskStyleSwitch({ style, onChange }: { style: MaskStyle; onChange: (s: 
   ]
   return (
     <div className="flex flex-col gap-2">
-      <h2 className="text-sm font-medium text-stone-500" id="mask-style">
+      <h2 className="text-[13px] font-semibold tracking-[0.08em] text-ash uppercase" id="mask-style">
         Masking style
       </h2>
-      <div role="radiogroup" aria-labelledby="mask-style" className="grid grid-cols-2 gap-1 rounded-2xl bg-stone-200/70 p-1">
+      <div role="radiogroup" aria-labelledby="mask-style" className="grid grid-cols-2 gap-1 rounded-2xl bg-ink-2 p-1 ring-1 ring-ink-3">
         {options.map(([value, label]) => (
           <button
             key={value}
@@ -167,8 +184,8 @@ function MaskStyleSwitch({ style, onChange }: { style: MaskStyle; onChange: (s: 
             role="radio"
             aria-checked={style === value}
             onClick={() => onChange(value)}
-            className={`min-h-11 rounded-xl px-2 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-teal-600 ${
-              style === value ? 'bg-white text-stone-900 shadow-sm' : 'text-stone-600'
+            className={`min-h-11 rounded-xl px-2 text-sm font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-marigold ${
+              style === value ? 'bg-paper text-ink' : 'text-ash hover:text-paper'
             }`}
           >
             {label}
@@ -176,7 +193,7 @@ function MaskStyleSwitch({ style, onChange }: { style: MaskStyle; onChange: (s: 
         ))}
       </div>
       {style === 'keep_last_4' && (
-        <p className="text-[13px] text-stone-500">
+        <p className="text-[13px] leading-relaxed text-ash">
           Aadhaar, VID, account and phone numbers show like XXXX XXXX 1234. Everything else stays fully hidden.
         </p>
       )}
@@ -188,17 +205,17 @@ function QualityNotice({ quality, onRetake }: { quality: ImageQuality; onRetake:
   const action = { label: 'Try another photo', onClick: onRetake }
   if (quality === 'no_text') {
     return (
-      <Notice tone="warning" title="We couldn’t find any text" action={action}>
+      <Notice dark tone="warning" title="We couldn’t find any text" action={action}>
         Make sure the whole document is in the photo, in good light and in focus. You can also cover areas yourself
-        with <strong>Draw box</strong>.
+        with <strong className="text-paper">Draw box</strong>.
       </Notice>
     )
   }
   if (quality === 'blurry') {
     return (
-      <Notice tone="warning" title="This photo looks blurry" action={action}>
+      <Notice dark tone="warning" title="This photo looks blurry" action={action}>
         Some details may have been missed. For best results, retake it in good light, holding the phone steady
-        and flat above the document. Check the boxes carefully if you continue.
+        and flat above the document. Check the bars carefully if you continue.
       </Notice>
     )
   }

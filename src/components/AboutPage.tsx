@@ -8,7 +8,7 @@ export function AboutPage({ onBack }: { onBack: () => void }) {
       <button
         type="button"
         onClick={onBack}
-        className="flex min-h-12 items-center gap-1 self-start rounded-xl pr-3 text-sm font-medium text-teal-800 hover:bg-white"
+        className="flex min-h-12 items-center gap-1 self-start rounded-xl pr-3 text-sm font-semibold text-ink hover:bg-card focus-visible:outline-2 focus-visible:outline-ink"
       >
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className="h-5 w-5" aria-hidden="true">
           <path d="M15 18l-6-6 6-6" />
@@ -16,12 +16,14 @@ export function AboutPage({ onBack }: { onBack: () => void }) {
         Back
       </button>
 
-      <h2 className="text-xl font-semibold tracking-tight">About SafeShare and your privacy</h2>
+      <h1 className="font-display text-[32px] leading-[1.05] font-extrabold tracking-tight text-ink">
+        About SafeShare and your <span className="redact-word">privacy</span>
+      </h1>
 
       <Section title="What SafeShare does">
         <p>
           Before you send a photo of your Aadhaar card, PAN card, passbook or another document, SafeShare finds the
-          details that could be misused and covers them with solid black boxes. You check the result, add a note like
+          details that could be misused and covers them with solid black bars. You check the result, add a note like
           “Shared only for flat rental” if you want, and then save or share the cleaned copy.
         </p>
       </Section>
@@ -73,15 +75,15 @@ export function AboutPage({ onBack }: { onBack: () => void }) {
         </p>
       </Section>
 
-      <p className="text-[13px] text-stone-500">Last updated 19 October 2026.</p>
+      <p className="text-[13px] text-muted">Last updated 19 October 2026.</p>
     </article>
   )
 }
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <section className="flex flex-col gap-2 rounded-2xl bg-white px-4 py-4 text-[15px] leading-relaxed text-stone-700 ring-1 ring-stone-200 [&_li]:ml-5 [&_li]:list-disc [&_li+li]:mt-2">
-      <h3 className="text-base font-semibold text-stone-900">{title}</h3>
+    <section className="flex flex-col gap-2 rounded-2xl bg-card px-4 py-5 text-[15px] leading-relaxed text-ink ring-1 ring-line [&_li]:ml-5 [&_li]:list-[square] [&_li]:marker:text-ink [&_li+li]:mt-2">
+      <h2 className="font-display text-lg font-extrabold tracking-tight">{title}</h2>
       {children}
     </section>
   )

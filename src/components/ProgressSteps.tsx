@@ -17,7 +17,7 @@ interface Props {
 export function ProgressSteps({ step, progress }: Props) {
   const current = STEPS.findIndex((s) => s.id === step)
   return (
-    <div role="status" aria-live="polite" className="rounded-2xl bg-white px-4 py-4 ring-1 ring-stone-200">
+    <div role="status" aria-live="polite" className="rounded-2xl bg-card px-4 py-4 ring-1 ring-line">
       <ol className="flex flex-col gap-3">
         {STEPS.map((s, i) => {
           const state = i < current ? 'done' : i === current ? 'active' : 'todo'
@@ -26,14 +26,14 @@ export function ProgressSteps({ step, progress }: Props) {
             <li key={s.id} className="flex items-start gap-3" aria-current={state === 'active' ? 'step' : undefined}>
               <StepIcon state={state} />
               <div className="flex min-w-0 flex-1 flex-col gap-1.5">
-                <p className={`text-[15px] ${state === 'todo' ? 'text-stone-400' : 'text-stone-800'} ${state === 'active' ? 'font-medium' : ''}`}>
+                <p className={`text-[15px] ${state === 'todo' ? 'text-muted' : 'text-ink'} ${state === 'active' ? 'font-semibold' : ''}`}>
                   {s.label}
-                  {percent !== null && <span className="text-stone-500"> · {percent}%</span>}
+                  {percent !== null && <span className="font-normal text-muted"> · {percent}%</span>}
                 </p>
-                {state === 'active' && s.hint && <p className="text-[13px] text-stone-500">{s.hint}</p>}
+                {state === 'active' && s.hint && <p className="text-[13px] text-muted">{s.hint}</p>}
                 {state === 'active' && s.id === 'read' && (
-                  <div className="h-1.5 overflow-hidden rounded-full bg-stone-100">
-                    <div className="h-full rounded-full bg-teal-600 transition-[width] duration-300" style={{ width: `${percent ?? 0}%` }} />
+                  <div className="h-1.5 overflow-hidden bg-line">
+                    <div className="h-full bg-ink transition-[width] duration-300" style={{ width: `${percent ?? 0}%` }} />
                   </div>
                 )}
               </div>
@@ -48,15 +48,20 @@ export function ProgressSteps({ step, progress }: Props) {
 function StepIcon({ state }: { state: 'done' | 'active' | 'todo' }) {
   if (state === 'done') {
     return (
-      <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-teal-700 text-white" aria-label="Done">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" className="h-3 w-3" aria-hidden="true">
-          <path d="M5 12l5 5L19 7" strokeLinecap="round" strokeLinejoin="round" />
+      <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center bg-ink text-marigold" aria-label="Done">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5" className="h-3 w-3" aria-hidden="true">
+          <path d="M5 12l5 5L19 7" strokeLinecap="square" />
         </svg>
       </span>
     )
   }
   if (state === 'active') {
-    return <span className="mt-0.5 h-5 w-5 shrink-0 animate-spin rounded-full border-2 border-teal-700 border-t-transparent" aria-label="In progress" />
+    return (
+      <span
+        className="mt-0.5 h-5 w-5 shrink-0 animate-spin rounded-full border-2 border-ink border-t-transparent motion-reduce:animate-none motion-reduce:border-t-ink"
+        aria-label="In progress"
+      />
+    )
   }
-  return <span className="mt-0.5 h-5 w-5 shrink-0 rounded-full border-2 border-stone-300" aria-hidden="true" />
+  return <span className="mt-0.5 h-5 w-5 shrink-0 border-2 border-line" aria-hidden="true" />
 }

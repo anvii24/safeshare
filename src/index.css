@@ -1,7 +1,33 @@
 @import "tailwindcss";
 
+/* Archivo, bundled with the app (Latin only, ~35 KB): no font CDN, and it works offline. */
+@font-face {
+  font-family: "Archivo Variable";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 900;
+  src: url("../node_modules/@fontsource-variable/archivo/files/archivo-latin-wght-normal.woff2") format("woff2-variations");
+}
+
+/*
+  "The Redaction Bar": black, off-white and one accent (marigold).
+  Contrast (WCAG): ink/paper 16.7, marigold on ink 9.3, ink on marigold 9.3,
+  muted on paper 6.3, ash on ink 7.1. Marigold on paper is only 1.8, so it is
+  NEVER used for text on light backgrounds, only as a fill next to black.
+*/
 @theme {
   --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-display: "Archivo Variable", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+
+  --color-ink: #111111;
+  --color-ink-2: #1b1b1b; /* raised surfaces in secure mode */
+  --color-ink-3: #2e2e2e; /* lines and selected rows in secure mode */
+  --color-paper: #f4f1ea;
+  --color-card: #fbf9f4; /* cards on paper */
+  --color-line: #dcd6c9; /* lines on paper */
+  --color-marigold: #f5a524;
+  --color-muted: #5c5850; /* secondary text on paper */
+  --color-ash: #a39e93; /* secondary text on ink */
 }
 
 html {
@@ -10,5 +36,167 @@ html {
 
 body {
   margin: 0;
-  background: var(--color-stone-50);
+  background: var(--color-paper);
+}
+
+/* Review runs in "secure mode": dark all the way to the edges, also when overscrolling. */
+html.secure,
+html.secure body {
+  background: var(--color-ink);
+  color-scheme: dark;
+}
+
+/* ---------------------------------------------------------------------------
+   Motion. Only transform and opacity are animated, so it stays smooth on
+   cheap phones. With "reduce motion" on, everything shows its end state.
+   --------------------------------------------------------------------------- */
+
+/* A word set on a black bar (headline "numbers"): the bar wipes in once. */
+.redact-word {
+  position: relative;
+  display: inline-block;
+  padding: 0 0.18em;
+  color: var(--color-marigold);
+  isolation: isolate;
+}
+.redact-word::before {
+  content: "";
+  position: absolute;
+  inset: 0.04em 0 -0.02em;
+  z-index: -1;
+  background: var(--color-ink);
+  transform-origin: left center;
+  animation: bar-wipe 520ms cubic-bezier(0.2, 0.8, 0.2, 1) 250ms both;
+}
+
+@keyframes bar-wipe {
+  from {
+    transform: scaleX(0);
+  }
+}
+
+/* 1. Scan line sweeping down the photo while OCR runs. The track is as tall as
+      the image, so translateY(100%) moves the line from top to bottom. */
+.scan-track {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  animation: scan 2.4s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+}
+.scan-track::before {
+  content: "";
+  position: absolute;
+  inset: -72px 0 auto;
+  height: 72px;
+  background: linear-gradient(to bottom, rgb(245 165 36 / 0), rgb(245 165 36 / 0.28));
+}
+.scan-track::after {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 3px;
+  background: var(--color-marigold);
+  box-shadow: 0 0 14px 3px rgb(245 165 36 / 0.7);
+}
+
+@keyframes scan {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(100%);
+  }
+}
+
+/* 2. Redaction bars sliding in one by one on the review image (SVG rects). */
+.bar-in {
+  transform-box: fill-box;
+  transform-origin: left center;
+  animation: bar-wipe 340ms cubic-bezier(0.2, 0.8, 0.2, 1) var(--bar-delay, 0ms) both;
+}
+
+/* 4. Home hero: the sample card scans, redacts itself, holds, clears, repeats. */
+.hero-scan {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0;
+  animation: hero-scan 6s linear infinite;
+}
+.hero-scan::after {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 2px;
+  background: var(--color-marigold);
+  box-shadow: 0 0 10px 2px rgb(245 165 36 / 0.7);
+}
+.hero-bar {
+  position: absolute;
+  inset: -1px -5px;
+  background: var(--color-ink);
+  transform: scaleX(0);
+  transform-origin: left center;
+  animation: hero-bar 6s cubic-bezier(0.2, 0.8, 0.2, 1) var(--bar-delay, 0ms) infinite;
+}
+.hero-paused .hero-scan,
+.hero-paused .hero-bar {
+  animation-play-state: paused;
+}
+
+@keyframes hero-scan {
+  0% {
+    transform: translateY(0);
+    opacity: 0;
+  }
+  3% {
+    opacity: 1;
+  }
+  20% {
+    transform: translateY(100%);
+    opacity: 1;
+  }
+  23%,
+  100% {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+}
+
+/* Wipes in left to right, holds, then wipes out to the right. */
+@keyframes hero-bar {
+  0%,
+  16% {
+    transform: scaleX(0);
+    transform-origin: left center;
+  }
+  24%,
+  74% {
+    transform: scaleX(1);
+    transform-origin: left center;
+  }
+  74.1% {
+    transform: scaleX(1);
+    transform-origin: right center;
+  }
+  82%,
+  100% {
+    transform: scaleX(0);
+    transform-origin: right center;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .redact-word::before,
+  .bar-in {
+    animation: none;
+  }
+  .scan-track,
+  .hero-scan {
+    display: none;
+  }
+  .hero-bar {
+    animation: none;
+    transform: none;
+  }
 }

@@ -5,8 +5,8 @@ import { defineConfig } from 'vite'
 import { VitePWA } from 'vite-plugin-pwa'
 import { SHARE_FIELD, SHARE_TARGET_PATH } from './src/shareTarget.ts'
 
-const THEME = '#0f766e' // teal-700
-const BACKGROUND = '#fafaf9' // stone-50
+const THEME = '#111111' // ink
+const BACKGROUND = '#f4f1ea' // paper
 
 // `npm run preview` sends the same security headers as production (vercel.json),
 // including the Content-Security-Policy, so they can be tested locally.
@@ -32,10 +32,10 @@ export default defineConfig({
       injectRegister: false, // registered in main.tsx
       includeManifestIcons: false, // already precached by globPatterns
       injectManifest: {
-        // Precached on install: the app, icons, the OCR worker script and both
+        // Precached on install: the app, its font, icons, the OCR worker script and both
         // language files. The three OCR engine builds are cached on first use
         // instead (see sw.ts), since a device only needs one of them.
-        globPatterns: ['**/*.{js,css,html,svg,png,webmanifest}', 'tesseract/worker.min.js', 'tesseract/lang/*.gz'],
+        globPatterns: ['**/*.{js,css,html,svg,png,webmanifest,woff2}', 'tesseract/worker.min.js', 'tesseract/lang/*.gz'],
         globIgnores: ['tesseract/tesseract-core-*'],
         maximumFileSizeToCacheInBytes: 4 * 1024 * 1024, // eng.traineddata.gz is ~2.9 MB
       },
