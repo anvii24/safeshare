@@ -4,7 +4,7 @@
 
 People in India send photos of their Aadhaar card, PAN card or passbook over WhatsApp all the time: to landlords, employers, banks, delivery agents. Those photos carry far more than the person needs, and they get forwarded and stored indefinitely. SafeShare reads the photo on your device, finds the sensitive details, covers them with solid black boxes, and gives you a clean copy to share.
 
-Live app: _add your Vercel URL here_
+Live app: **https://safeshare-nine.vercel.app**
 
 <!-- Captured from the production build at 390px with a synthetic test card. Swap in real phone screenshots when you have them. -->
 | Choose a photo | Review what's hidden | Share the clean copy |

@@ -196,6 +196,7 @@ sensitive parts and covers them, and the user shares the cleaned image.
 - [x] README with privacy design, detection, results, screenshots, local setup
 
 ### Deployment notes
+- Live on Vercel: https://safeshare-nine.vercel.app (GitHub `anvii24/safeshare`, every push to `main` redeploys)
 - HTTPS is required (service worker, install, Web Share). `localhost` is exempt.
 - `.gz` language files: fine whether or not the host adds `Content-Encoding: gzip`; Tesseract
   checks the gzip magic bytes before unzipping (tesseract.js worker-script/index.js).
